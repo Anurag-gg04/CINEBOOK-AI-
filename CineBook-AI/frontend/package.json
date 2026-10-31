@@ -1,16 +1,13 @@
+
 {
-  "name": "cinebook-ai-frontend",
-  "private": true,
-  "version": "2.0.0",
+  "name": "cinebook-ai",
+  "version": "1.0.0",
   "type": "module",
-  "main": "server.mjs",
+  "main": "server.js",
   "scripts": {
-    "dev": "node server.mjs",
-    "start": "node server.mjs",
-    "check": "node --check app.js && node --check server.mjs && node scripts/verify-static.mjs",
-    "typecheck": "npm run check",
-    "lint": "node --check app.js && node --check server.mjs",
-    "test": "node --test",
-    "build": "npm run check"
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }
