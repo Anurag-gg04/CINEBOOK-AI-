@@ -1,0 +1,24 @@
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+management:
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+app:
+  seed:
+    enabled: false
+  mail:
+    enabled: ${APP_MAIL_ENABLED:true}
+  jwt:
+    # In the prod profile there is deliberately no insecure development fallback.
+    secret: ${JWT_SECRET}
+  security:
+    api-docs-public: false
+    email-verification-required: true
+  payments:
+    # A production deployment must use a real gateway; never expose the simulator.
+    simulator-enabled: false

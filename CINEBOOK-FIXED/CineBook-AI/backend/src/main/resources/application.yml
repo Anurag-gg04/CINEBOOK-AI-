@@ -1,0 +1,115 @@
+server:
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: cinebook-api
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      "[mail.smtp.auth]": ${MAIL_SMTP_AUTH:true}
+      "[mail.smtp.starttls.enable]": ${MAIL_SMTP_STARTTLS:true}
+      "[mail.smtp.connectiontimeout]": 5000
+      "[mail.smtp.timeout]": 3000
+      "[mail.smtp.writetimeout]": 5000
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/cinebook?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
+    username: ${DB_USERNAME:cinebook}
+    password: ${DB_PASSWORD:cinebook_dev_only}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:12}
+      connection-timeout: 30000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        order_updates: true
+        order_inserts: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 1s
+  cache:
+    type: ${APP_CACHE_TYPE:none}
+    redis:
+      time-to-live: 5m
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+  jackson:
+    time-zone: UTC
+    default-property-inclusion: non_null
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+      show-components: never
+      group:
+        readiness:
+          include: readinessState,db,diskSpace,ping
+        liveness:
+          include: livenessState,ping
+  health:
+    rabbit:
+      enabled: false
+    redis:
+      enabled: false
+  info:
+    env:
+      enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  seed:
+    enabled: ${APP_SEED_ENABLED:true}
+  mail:
+    enabled: ${APP_MAIL_ENABLED:false}
+    login-alerts: ${APP_MAIL_LOGIN_ALERTS:true}
+    from: ${MAIL_FROM:${MAIL_USERNAME:noreply@cinebook.local}}
+    public-url: ${APP_PUBLIC_URL:http://localhost:5173}
+  security:
+    api-docs-public: ${API_DOCS_PUBLIC:false}
+    email-verification-required: ${APP_EMAIL_VERIFICATION_REQUIRED:false}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-replace-this-with-at-least-32-bytes-0123456789}
+    access-minutes: ${JWT_ACCESS_MINUTES:15}
+    refresh-days: ${JWT_REFRESH_DAYS:14}
+  booking:
+    hold-minutes: ${SEAT_HOLD_MINUTES:5}
+  redis:
+    enabled: ${APP_REDIS_ENABLED:false}
+  messaging:
+    enabled: ${APP_MESSAGING_ENABLED:false}
+  payments:
+    simulator-enabled: ${APP_PAYMENT_SIMULATOR_ENABLED:true}
+    mode: ${PAYMENT_MODE:SIMULATOR}
+    razorpay-key-id: ${RAZORPAY_KEY_ID:}
+    razorpay-key-secret: ${RAZORPAY_KEY_SECRET:}
+    razorpay-webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
