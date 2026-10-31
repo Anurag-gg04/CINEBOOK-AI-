@@ -1,0 +1,3 @@
+package com.cinebook.events;
+import com.fasterxml.jackson.core.JsonProcessingException; import com.fasterxml.jackson.databind.ObjectMapper; import org.springframework.stereotype.Service;
+@Service public class OutboxService {private final OutboxRepository repo;private final ObjectMapper mapper;public OutboxService(OutboxRepository r,ObjectMapper m){repo=r;mapper=m;}public void record(String type,String aggregateId,Object payload,String correlationId){try{repo.save(new OutboxEvent(type,aggregateId,mapper.writeValueAsString(payload),correlationId));}catch(JsonProcessingException ex){throw new IllegalStateException("Could not serialize domain event",ex);}}}

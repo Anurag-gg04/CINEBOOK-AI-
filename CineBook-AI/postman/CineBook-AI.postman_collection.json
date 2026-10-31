@@ -1,0 +1,44 @@
+{
+  "info": {
+    "name": "CineBook AI API",
+    "description": "Development API collection. Import, set baseUrl, and authenticate before customer/booking requests. All payment simulator requests are development-only.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "accessToken", "value": "" },
+    { "key": "movieId", "value": "1" },
+    { "key": "showId", "value": "1" },
+    { "key": "seatIds", "value": "[1,2]" },
+    { "key": "holdToken", "value": "" },
+    { "key": "bookingId", "value": "1" },
+    { "key": "refreshToken", "value": "" }
+  ],
+  "item": [
+    { "name": "Health", "item": [
+      { "name": "Readiness", "request": { "method": "GET", "url": "{{baseUrl}}/actuator/health/readiness" } },
+      { "name": "Payment options", "request": { "method": "GET", "url": "{{baseUrl}}/api/payments/options" } }
+    ]},
+    { "name": "Authentication", "item": [
+      { "name": "Register", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode":"raw", "raw":"{\n  \"displayName\": \"Demo Customer\",\n  \"email\": \"new.customer@example.test\",\n  \"password\": \"A-local-demo-password-2026!\"\n}" }, "url": "{{baseUrl}}/api/auth/register" }, "event": [{"listen":"test","script":{"exec":["if (pm.response.code === 200 || pm.response.code === 201) { const d=pm.response.json(); pm.collectionVariables.set('accessToken',d.accessToken); pm.collectionVariables.set('refreshToken',d.refreshToken); }"]}}] },
+      { "name": "Login seeded customer", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": { "mode":"raw", "raw":"{\n  \"email\": \"customer@cinebook.local\",\n  \"password\": \"CineBookDemo!2026\"\n}" }, "url": "{{baseUrl}}/api/auth/login" }, "event": [{"listen":"test","script":{"exec":["if(pm.response.code===200){const d=pm.response.json();pm.collectionVariables.set('accessToken',d.accessToken);pm.collectionVariables.set('refreshToken',d.refreshToken);}"]}}] },
+      { "name": "Me", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{accessToken}}"}], "url": "{{baseUrl}}/api/auth/me" } },
+      { "name": "Rotate refresh token", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"}, "url": "{{baseUrl}}/api/auth/refresh" } }
+    ]},
+    { "name": "Catalog", "item": [
+      { "name": "Search movies", "request": { "method": "GET", "url": "{{baseUrl}}/api/movies?q=&page=0&size=24&sort=rating" } },
+      { "name": "Movie detail", "request": { "method": "GET", "url": "{{baseUrl}}/api/movies/{{movieId}}" } },
+      { "name": "Showtimes", "request": { "method": "GET", "url": "{{baseUrl}}/api/shows?movieId={{movieId}}" } },
+      { "name": "Seat availability", "request": { "method": "GET", "url": "{{baseUrl}}/api/shows/{{showId}}/seats" } },
+      { "name": "Recommendations", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"seatCount\": 2,\n  \"maxBudget\": 700,\n  \"rowPreference\": \"MIDDLE\",\n  \"adjacent\": true,\n  \"aisle\": true,\n  \"accessibleOnly\": false,\n  \"naturalLanguage\": \"two adjacent seats in the middle near the aisle\"\n}"}, "url":"{{baseUrl}}/api/shows/{{showId}}/recommendations"}}
+    ]},
+    { "name": "Booking journey", "item": [
+      { "name": "Create seat hold", "request": { "method":"POST", "header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"},{"key":"Idempotency-Key","value":"{{$guid}}"}], "body":{"mode":"raw","raw":"{\n  \"seatIds\": {{seatIds}}\n}"}, "url":"{{baseUrl}}/api/shows/{{showId}}/holds" }, "event":[{"listen":"test","script":{"exec":["if(pm.response.code===200||pm.response.code===201){pm.collectionVariables.set('holdToken',pm.response.json().token);}"]}}] },
+      { "name":"Quote hold", "request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":"{{baseUrl}}/api/holds/{{holdToken}}/quote?couponCode=WELCOME10"}},
+      { "name":"Simulate payment success (development only)", "request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"},{"key":"Idempotency-Key","value":"{{$guid}}"}],"body":{"mode":"raw","raw":"{\n  \"holdToken\": \"{{holdToken}}\",\n  \"decision\": \"APPROVE\",\n  \"couponCode\": \"WELCOME10\"\n}"},"url":"{{baseUrl}}/api/payments/simulator"},"event":[{"listen":"test","script":{"exec":["if(pm.response.code===200 && pm.response.json().booking){pm.collectionVariables.set('bookingId',String(pm.response.json().booking.id));}"]}}] },
+      { "name":"Booking ticket", "request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":"{{baseUrl}}/api/bookings/{{bookingId}}"}},
+      { "name":"Booking history", "request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":"{{baseUrl}}/api/bookings"}},
+      { "name":"Cancel booking", "request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":"{{baseUrl}}/api/bookings/{{bookingId}}/cancel"}}
+    ]}
+  ]
+}

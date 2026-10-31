@@ -1,0 +1,6 @@
+package com.cinebook.events;
+import org.springframework.amqp.rabbit.core.RabbitTemplate; import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty; import org.springframework.scheduling.annotation.Scheduled; import org.springframework.stereotype.Component; import org.springframework.transaction.annotation.Transactional; import org.slf4j.Logger; import org.slf4j.LoggerFactory;
+@Component @ConditionalOnProperty(name="app.messaging.enabled",havingValue="true")
+public class OutboxPublisher {private static final Logger log=LoggerFactory.getLogger(OutboxPublisher.class);private final OutboxRepository repo;private final RabbitTemplate rabbit;public OutboxPublisher(OutboxRepository r,RabbitTemplate t){repo=r;rabbit=t;}
+ @Scheduled(fixedDelayString="${OUTBOX_PUBLISH_DELAY_MS:3000}") @Transactional public void publishPending(){for(OutboxEvent e:repo.findTop50ByStateOrderByCreatedAtAsc("PENDING")){try{rabbit.convertAndSend("cinebook.events","booking."+e.getEventType().toLowerCase(),e.getPayload(),m->{m.getMessageProperties().setMessageId(e.getId().toString());if(e.getCorrelationId()!=null)m.getMessageProperties().setCorrelationId(e.getCorrelationId());return m;});e.markPublished();}catch(Exception ex){e.failed();log.warn("Outbox publish failed for event {} (attempt {})",e.getId(),e.getAttempts());}}}
+}

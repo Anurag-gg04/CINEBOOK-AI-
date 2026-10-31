@@ -1,0 +1,12 @@
+package com.cinebook.common;
+import jakarta.servlet.http.HttpServletRequest; import jakarta.validation.ConstraintViolationException; import org.springframework.dao.DataIntegrityViolationException; import org.springframework.http.HttpStatus; import org.springframework.http.ResponseEntity; import org.springframework.security.access.AccessDeniedException; import org.springframework.validation.FieldError; import org.springframework.web.bind.MethodArgumentNotValidException; import org.springframework.web.bind.annotation.ExceptionHandler; import org.springframework.web.bind.annotation.RestControllerAdvice; import java.time.Instant; import java.util.List;
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+ @ExceptionHandler(ApiException.class) ResponseEntity<ApiError> known(ApiException e,HttpServletRequest r){return ResponseEntity.status(e.getStatus()).body(error(e.getCode(),e.getMessage(),r,List.of()));}
+ @ExceptionHandler(MethodArgumentNotValidException.class) ResponseEntity<ApiError> validation(MethodArgumentNotValidException e,HttpServletRequest r){List<ApiError.FieldIssue> f=e.getBindingResult().getFieldErrors().stream().map(x->new ApiError.FieldIssue(x.getField(),x.getDefaultMessage())).toList();return ResponseEntity.badRequest().body(error("VALIDATION_FAILED","One or more fields are invalid",r,f));}
+ @ExceptionHandler(ConstraintViolationException.class) ResponseEntity<ApiError> constraint(ConstraintViolationException e,HttpServletRequest r){return ResponseEntity.badRequest().body(error("VALIDATION_FAILED","One or more fields are invalid",r,List.of()));}
+ @ExceptionHandler(DataIntegrityViolationException.class) ResponseEntity<ApiError> conflict(DataIntegrityViolationException e,HttpServletRequest r){return ResponseEntity.status(409).body(error("CONFLICT","The requested operation conflicts with current data. Refresh and try again.",r,List.of()));}
+ @ExceptionHandler(AccessDeniedException.class) ResponseEntity<ApiError> denied(AccessDeniedException e,HttpServletRequest r){return ResponseEntity.status(403).body(error("FORBIDDEN","You are not allowed to perform this action",r,List.of()));}
+ @ExceptionHandler(Exception.class) ResponseEntity<ApiError> unexpected(Exception e,HttpServletRequest r){return ResponseEntity.status(500).body(error("INTERNAL_ERROR","An unexpected error occurred",r,List.of()));}
+ private ApiError error(String code,String message,HttpServletRequest r,List<ApiError.FieldIssue> f){return new ApiError(code,message,r.getRequestURI(),Instant.now(),r.getHeader("X-Correlation-ID"),f);}
+}

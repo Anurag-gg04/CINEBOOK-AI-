@@ -1,0 +1,24 @@
+# Secrets / local configuration
+.env
+.env.*.local
+!.env.example
+*.pem
+*.key
+# Java
+backend/target/
+.mvn/wrapper/maven-wrapper.jar
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+playwright-report/
+test-results/
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+# local database volumes are Docker-managed

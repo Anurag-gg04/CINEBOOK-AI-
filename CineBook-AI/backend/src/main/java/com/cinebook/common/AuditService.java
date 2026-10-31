@@ -1,0 +1,3 @@
+package com.cinebook.common;
+import com.cinebook.auth.UserAccount;import com.cinebook.auth.UserRepository;import org.springframework.stereotype.Service;
+@Service public class AuditService {private final AuditEventRepository events;private final UserRepository users;public AuditService(AuditEventRepository e,UserRepository u){events=e;users=u;}public void record(String actorEmail,String action,String type,String id,String details,String correlationId){UserAccount actor=users.findByEmailIgnoreCase(actorEmail).orElse(null);events.save(new AuditEvent(actor,action,type,id,details,correlationId));}}

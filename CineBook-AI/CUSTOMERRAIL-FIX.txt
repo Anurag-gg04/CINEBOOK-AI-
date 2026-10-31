@@ -1,0 +1,14 @@
+CineBook AI customerRail startup error fix
+
+The patched frontend no longer references customerRail. The versioned app.js URL and no-cache headers prevent an old cached frontend bundle from being reused.
+
+IMPORTANT: Do not keep running the frontend terminal from an older extracted copy.
+
+1. Stop the old frontend server with Ctrl+C.
+2. Open this extracted project folder in VS Code (the folder containing scripts, frontend, backend, and docker-compose.yml).
+3. In a terminal, run: cd frontend
+4. Run: npm run dev
+5. Open the URL printed by that new terminal.
+
+To start the backend in another terminal from the project root, run: .\scripts\Start-Backend.ps1
+The backend still requires a running MySQL database and the configured cinebook database credentials.

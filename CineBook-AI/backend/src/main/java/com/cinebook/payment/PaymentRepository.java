@@ -1,0 +1,3 @@
+package com.cinebook.payment;
+import org.springframework.data.jpa.repository.JpaRepository; import java.util.Optional;
+public interface PaymentRepository extends JpaRepository<PaymentRecord,Long>{Optional<PaymentRecord> findByIdempotencyKey(String key);Optional<PaymentRecord> findByHoldIdAndProvider(Long holdId,PaymentRecord.Provider provider);Optional<PaymentRecord> findByBookingId(Long bookingId);Optional<PaymentRecord> findByProviderReference(String reference);Optional<PaymentRecord> findByProviderPaymentId(String paymentId);Optional<PaymentRecord> findFirstByHoldIdAndStatusOrderByCreatedAtDesc(Long holdId,PaymentRecord.Status status);boolean existsByHoldIdAndStatus(Long holdId,PaymentRecord.Status status);long countByStatus(PaymentRecord.Status status);}

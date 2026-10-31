@@ -1,0 +1,1 @@
+package com.cinebook.payment;import org.springframework.data.jpa.repository.JpaRepository;import java.util.List;public interface RefundRepository extends JpaRepository<RefundRecord,Long>{List<RefundRecord> findAllByPaymentIdOrderByCreatedAtDesc(Long paymentId);java.util.Optional<RefundRecord> findByProviderReference(String providerReference);}
