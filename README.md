@@ -1,165 +1,125 @@
-# CineBook AI — Cinema Booking & Management Platform
+# CineBook AI
 
-CineBook AI is a modular-monolith cinema booking application built around a Java 21 / Spring Boot 3.4 backend, MySQL 8, Flyway migrations, a React + TypeScript + Vite frontend, and an optional Spring AI assistant. It supports customer ticket booking, transactional seat holds, partner and operations views, platform administration, Google OpenID Connect sign-in, and Razorpay test-mode checkout.
+A cinema-themed, modular-monolith movie ticket booking application using Java 21, Spring Boot 3, MySQL 8, optional Redis/RabbitMQ, and a vanilla HTML/CSS/JavaScript frontend. The interface includes separate customer, theatre-partner, administrator, and operations dashboards with a shared cinematic theme and role-specific layouts. The core booking journey uses the REST API and relational seat inventory; the development payment simulator does not move money.
 
-> **Important:** This is an upgraded major-project codebase, not a production certification. External credentials and hosted services are required for live Google sign-in, LLM responses, SMTP, Razorpay and deployment. Java compilation, Maven tests, Docker builds and live OAuth were not executable in the environment used to prepare this ZIP. The exact verification scope is recorded in [`docs/VERIFICATION_REPORT.md`](docs/VERIFICATION_REPORT.md). No claim of “zero bugs” or tested production readiness is made.
+> **Development / portfolio software, not production-certified.** Frontend checks and static repository verification are included; backend Maven tests, Docker image builds, and live payment flows still need to be run in an environment with Maven and Docker. See [`docs/VERIFICATION_REPORT.md`](docs/VERIFICATION_REPORT.md) for the current verification results and remaining gaps.
 
-## What's included
+## Features implemented in this repository
 
-- **Customer experience:** live movie catalogue, search and genre filters, movie details, showtimes, seat inventory, short-lived seat holds, checkout, booking history and cancellation.
-- **Booking safety:** database-backed seat inventory, row-level locking, unique show/seat constraints, idempotency keys, expiring holds and server-side payment verification in the existing backend.
-- **Authentication:** email/password with BCrypt and JWT access tokens; the active React app also handles the single-use production email-verification link; rotating server-side refresh tokens delivered in an `HttpOnly` cookie; one-time Google sign-in exchange codes; Google OIDC identity records; email verification support.
-- **AI assistant:** Spring AI / OpenAI-compatible chat integration. The model receives a bounded snapshot of actual upcoming CineBook showtimes; it is not allowed by the system prompt to invent titles, theatres, prices or bookings. Missing API credentials produce a clear unavailable response while booking remains usable.
-- **Partner workspace:** reads showtimes belonging to the authenticated partner account. The backend enforces partner/admin roles.
-- **Admin workspace:** reads registered users and recent audit events, and can change user roles through protected backend endpoints. The backend prevents an administrator from demoting their own account.
-- **Operations workspace:** database-backed operational metrics from the existing dashboard endpoint.
-- **Payments:** local simulator is explicitly a test-only flow and cannot move money. Razorpay is a separate integration; use test credentials until webhooks, refunds and reconciliation have been validated.
-- **Infrastructure:** local Docker Compose for MySQL, Redis, RabbitMQ, Spring Boot and Nginx; production-oriented Java Dockerfile and separate deployment examples.
+- Public movie catalog search, language/genre filters, detail pages, theatres, showtimes and per-show seat inventory.
+- Registration/login, BCrypt password hashing, a 12-character signup minimum with interactive strength feedback, short-lived JWT access tokens, rotating/revocable refresh tokens, IP/email sign-in throttling, role enforcement, optional SMTP welcome/sign-in alerts, and production email verification with single-use expiring tokens.
+- Database-authoritative per-show seats, pessimistic row locking, temporary seat holds, scheduled expiration, quote/coupon calculation, idempotency keys, booking history/ticket, cancellation and development-only simulated refund.
+- Deterministic seat recommendation from actual inventory, with adjacent-seat, budget, row preference, aisle and accessible-seat preferences plus explanation strings.
+- Razorpay test-mode order creation, server-side checkout signature verification, webhook signature/event deduplication, refund request records and ambiguous-outcome messaging. Requires credentials and was not live-tested here.
+- Transactional outbox records and optional RabbitMQ publisher; optional Redis cache. These are opt-in; core application defaults to simulator/local development.
+- Customer, theatre-partner, administrator and operations dashboards; admin role/catalog-active controls and audit listing. The partner dashboard exposes owned show summary/export, not full theatre/screen/show CRUD.
+- Actuator, OpenAPI/Swagger, Flyway schema, Postman collection, JMeter plan, backend/frontend checks and CI workflow.
 
-## Repository layout
+## Production deployment
 
-```text
-CineBook-AI/
-├── backend/                 # Java 21, Spring Boot, JPA, Security, Flyway, Spring AI
-├── frontend/                # Active React + TypeScript + Vite app; Vercel project root
-├── frontend-legacy/         # Preserved original HTML/CSS/vanilla-JS frontend (archive only)
-├── docs/                    # Architecture, OAuth, AI, deployment and testing guides
-├── performance/             # JMeter booking load-test plan
-├── postman/                 # API collection
-├── scripts/                 # PowerShell launchers and offline repository checks
-├── docker-compose.yml       # Local development stack
-├── docker-compose.production.yml
-├── .env.example
-└── .env.production.example
-```
+Use the separate [production deployment guide](docs/DEPLOYMENT.md) and `docker-compose.production.yml` for a Linux VPS deployment. Do not expose the development Compose ports to the public internet. Production runs with the `prod` Spring profile, disables demo seeding and the payment simulator, and keeps MySQL, Redis, RabbitMQ and the backend on the private Compose network. Configure HTTPS, SMTP, strong secrets, and Razorpay test credentials before validating checkout.
 
-`frontend/` is the active app. `frontend-legacy/` is retained as a reference copy of the original UI; it is not built by Docker Compose or deployed to Vercel.
+## Quick start (Windows PowerShell)
 
-## Windows 11 — exact local startup (recommended: Docker Desktop)
-
-### Prerequisites
-
-Install Docker Desktop with the WSL 2 backend enabled. Docker Compose v2 must work in PowerShell. For source-only frontend development, install Node.js 22 or newer. For direct backend startup, also install JDK 21 and Maven 3.9+.
-
-### Start the complete local stack
-
-Open PowerShell in the extracted `CineBook-AI` directory and run:
+Run the launcher from the extracted repository folder:
 
 ```powershell
-Copy-Item .env.example .env
+.\scripts\run-local.ps1
 ```
 
-Open `.env` and set `DEMO_ACCOUNT_PASSWORD` to a password you choose for local demo users. Also replace `JWT_SECRET` with a unique random value. The example MySQL and RabbitMQ passwords are for isolated local development only. Keep `PAYMENT_MODE=SIMULATOR` and leave Google/AI credentials blank until you configure them.
+It uses Docker Compose when Docker Desktop is installed and running. If Docker is not running, it attempts direct mode and checks for Java 21+, Maven 3.9+, Node.js 22+, npm 10+, and MySQL on `localhost:3306`. To choose explicitly, use `.\scripts\run-local.ps1 -Docker` or `.\scripts\run-local.ps1 -Direct`. Java 26 is not rejected solely for being newer than Java 21, although Java 21 remains the project's tested target.
 
-Then run:
+### Option A — Docker Compose (recommended on a machine with Docker Desktop)
 
-```powershell
-docker compose config
-docker compose up --build -d
-docker compose ps
-docker compose logs -f backend
-```
+1. Install Docker Desktop and ensure Docker Compose is available.
+2. In the repository root:
 
-Open these local addresses:
+   ```powershell
+   Copy-Item .env.example .env
+   # Keep PAYMENT_MODE=SIMULATOR initially. Change JWT_SECRET before exposing the app.
+   docker compose up --build
+   ```
 
-- CineBook React app: `http://localhost:5173`
-- Spring Boot API health: `http://localhost:8080/actuator/health`
-- Readiness health: `http://localhost:8080/actuator/health/readiness`
-- RabbitMQ management (local only): `http://localhost:15672`
+3. Open the app at `http://localhost:5173` and Actuator health at `http://localhost:8080/actuator/health`. OpenAPI/Swagger is protected by default; only enable public docs explicitly with `API_DOCS_PUBLIC=true` for isolated local development.
+4. Development accounts (local only): `customer@cinebook.local`, `partner@cinebook.local`, `admin@cinebook.local`, `ops@cinebook.local`. All use `CineBookDemo!2026`. Change/delete these accounts before any shared or public deployment.
+5. `docker compose down`; to delete development databases too, `docker compose down -v` (destructive).
 
-Stop the stack with:
+### Account email notifications (optional SMTP)
 
-```powershell
-docker compose down
-```
+New sign-ups can receive a styled CineBook welcome email, and each successful login can trigger an account sign-in alert. SMTP is deliberately **off by default** for the local profile, so you can work on the application before configuring a provider. In the `prod` profile, email ownership verification is required before sign-in: the account receives a single-use verification link that expires after 30 minutes.
 
-To remove local database/cache/broker volumes as well (destructive; deletes local data):
+For Gmail, turn on 2-Step Verification and create a Google App Password if App Passwords are available for your account. Do not use your ordinary Google password. Google notes that App Passwords require 2-Step Verification and recommends “Sign in with Google” where supported: [Google Account Help](https://support.google.com/accounts/answer/185833?hl=en).
 
-```powershell
-docker compose down -v
-```
+1. Copy `.env.example` to `.env` if you have not done so.
+2. Set `APP_MAIL_ENABLED=true`, `APP_MAIL_LOGIN_ALERTS=true`, `MAIL_USERNAME=your-mailbox@gmail.com`, `MAIL_PASSWORD=your-16-character-app-password`, and `MAIL_FROM` to the same verified sender mailbox. Keep `MAIL_HOST=smtp.gmail.com` and `MAIL_PORT=587` for Gmail SMTP.
+3. For a deployed site, set `APP_PUBLIC_URL` to the public HTTPS frontend origin and `CORS_ALLOWED_ORIGINS` to that origin. For production, set `SPRING_PROFILES_ACTIVE=prod`, replace the example `JWT_SECRET` with a unique randomly generated secret, and keep `APP_MAIL_ENABLED=true` so required verification email can be delivered.
+4. Recreate the backend so Compose applies the new environment: `docker compose up --build -d backend`.
+5. In the local profile, register a **new account** to test the welcome email. Sign out and sign in again to test the security alert. To test verification locally, set `APP_EMAIL_VERIFICATION_REQUIRED=true` as well as valid SMTP settings. Production requires verification automatically. Existing users do not receive a retroactive welcome email.
 
-### Local development accounts
+For direct PowerShell startup, `.env` is not automatically loaded into the backend process. Set the same variables in that terminal before running `scripts\Start-Backend.ps1`. In the local profile, email delivery is optional and the UI reports when it is not configured. When verification is required, sign-up fails closed if CineBook cannot send the verification email. SMTP diagnostics do not log message bodies, passwords, or full provider exception text.
 
-When `APP_SEED_ENABLED=true` in the local profile and the database is empty, the backend inserts demonstration records and local demo users. Set `DEMO_ACCOUNT_PASSWORD` in your uncommitted `.env` file before the first seed. The usernames and roles are defined in `DevelopmentSeed.java`, but no default demo password is committed. Never enable development seeding in a public deployment. Seeded records are illustrative, not real cinema inventory.
+Compose starts MySQL, Redis, RabbitMQ, backend and frontend. Optional Redis/RabbitMQ are enabled in Compose. Razorpay mode is selected only when valid keys are present; if enabled, the simulator is disabled so test-gateway payments are not confused with simulator results. The app can run without those integrations by setting `APP_REDIS_ENABLED=false`, `APP_CACHE_TYPE=none`, and `APP_MESSAGING_ENABLED=false`.
 
-### Run React and Java directly (without containers)
+### Option B — run the backend and frontend directly
 
-1. Start MySQL 8 and create the configured database/user. Redis and RabbitMQ can be disabled by setting `APP_REDIS_ENABLED=false`, `APP_CACHE_TYPE=none` and `APP_MESSAGING_ENABLED=false` in the backend terminal.
-2. Run the backend in PowerShell terminal 1:
+Requirements: JDK 21, Maven 3.9+, Node.js 22+, npm 10+, and a local MySQL 8 database. Redis/RabbitMQ are optional. Ensure schema database `cinebook` exists, copy `.env.example` to `.env`, and export the needed variables (the application does not auto-load the root `.env` when run directly).
 
 ```powershell
-cd backend
+# Terminal 1 - backend (from repository root)
+# Recommended: .\scripts\Start-Backend.ps1 (sets local defaults and starts Maven)
 $env:DB_URL = "jdbc:mysql://localhost:3306/cinebook?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC"
 $env:DB_USERNAME = "cinebook"
 $env:DB_PASSWORD = "cinebook_dev_only"
-$env:JWT_SECRET = "replace-with-a-random-secret-of-at-least-32-bytes"
-$env:DEMO_ACCOUNT_PASSWORD = Read-Host "Enter a local-only demo password"
-$env:SPRING_PROFILES_ACTIVE = "local"
+$env:JWT_SECRET = "replace-with-a-unique-random-secret-longer-than-32-bytes"
+$env:PAYMENT_MODE = "SIMULATOR"
+cd backend
 mvn spring-boot:run
-```
 
-3. Run the frontend in PowerShell terminal 2:
-
-```powershell
+# Terminal 2 - frontend (from repository root)
 cd frontend
-npm install
 npm run dev
 ```
 
-The Vite dev server proxies `/api`, `/oauth2` and `/login/oauth2` to `http://localhost:8080` by default. Set `BACKEND_BASE_URL` in `frontend/.env.local` only when the backend uses a different local address. Do not put backend secrets into any `VITE_*` variable.
+The dependency-light Node static server serves the HTML/CSS/JavaScript frontend and proxies `/api` to `http://localhost:8080`. When the backend starts, Flyway creates the schema and the development seed creates movies, theatres, showtimes, accounts and coupons. If using an already populated DB, the seed runner exits when movie records already exist.
 
-## Google sign-in configuration
+If startup reports `Detected failed migration to version 1 (initial schema)`, see [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md). For a **disposable local database only**, `scripts/reset-local-cinebook-db.sql` recreates the database so Flyway can retry V1; this permanently deletes all data in `cinebook`. Do not run it on a database whose contents you need.
 
-Read [`docs/GOOGLE_OAUTH.md`](docs/GOOGLE_OAUTH.md). Google sign-in is disabled until `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set on the **backend**. Register the callback URI served by the frontend proxy, not the Java host's private URL:
-
-```text
-http://localhost:5173/login/oauth2/code/google
-```
-
-For production, register the exact HTTPS URI on the Vercel domain, for example `https://your-app.vercel.app/login/oauth2/code/google`. Configure `FRONTEND_URL`, `GOOGLE_REDIRECT_URI`, `SESSION_COOKIE_SECURE=true` and `REFRESH_COOKIE_SECURE=true` on the backend host. The frontend uses a same-origin proxy so OAuth session and refresh cookies stay on the public frontend host.
-
-## AI assistant configuration
-
-Read [`docs/AI_FEATURES.md`](docs/AI_FEATURES.md). Add `AI_API_KEY` to the backend environment (never to Vercel's `VITE_*` variables). The default integration uses the Spring AI OpenAI starter and `AI_MODEL=gpt-4o-mini`. If the key is blank or the provider is unavailable, the AI assistant returns an explicit configuration/service error; catalogue, login and bookings are not intentionally disabled.
-
-## Deployment: Vercel frontend + hosted Java backend
-
-For the final-year write-up, scope and presentation sequence, see [`docs/PROJECT_REPORT.md`](docs/PROJECT_REPORT.md), [`docs/MAJOR_PROJECT_DEMO.md`](docs/MAJOR_PROJECT_DEMO.md) and [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md). Deploy using [`docs/VERCEL_DEPLOYMENT.md`](docs/VERCEL_DEPLOYMENT.md). Deploy `frontend/` as the Vercel project root. Deploy `backend/` as a Docker web service on a Java-compatible host such as Render, Railway, Fly.io or a cloud container service. Set Vercel's `BACKEND_BASE_URL` to the backend's HTTPS **origin** (no `/api` suffix). Host MySQL, Redis and RabbitMQ as managed/private services or provision them with the backend host. Vercel is the frontend and proxy host; it does not run the Spring Boot service, MySQL, Redis or RabbitMQ as ordinary Vite static assets.
-
-The included `docker-compose.production.yml` is a separate single-VPS option. It is not the Vercel architecture. Review [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) before exposing any public service.
-
-## Tests and verification commands
+### Verification commands
 
 ```powershell
-# Frontend (React / Node)
+# backend
+cd backend
+mvn test
+mvn package
+
+# frontend (in another terminal)
 cd frontend
-npm install
 npm run check
 npm test
-npm run typecheck
 npm run build
-
-# Backend (JDK 21 + Maven 3.9+)
-cd ..\backend
-mvn clean verify
-
-# Structural/configuration checks (Python 3)
-cd ..
-python scripts/verify-repository.py
 ```
 
-A successful static source check does not prove that OAuth, database concurrency, payments, mail delivery or cloud deployment work end-to-end. See `docs/VERIFICATION_REPORT.md` for the checks actually run for this release and those that still need to be executed with Maven, npm dependencies, Docker and external credentials.
+The frontend has no runtime npm dependencies. Docker Compose checks: `docker compose config`, `docker compose up --build`, then verify `/actuator/health/readiness`.
 
-## Security / operating notes
+## Payment modes
 
-- Never commit `.env`, SMTP passwords, JWT secrets, database credentials, Google client secrets, LLM keys or Razorpay secrets.
-- Google sign-in creates a `CUSTOMER` account only. An existing CineBook account is linked only if it has already verified the same email with CineBook. Google identities never grant admin or partner rights.
-- A Google OAuth authorization-code callback is exchanged for a short-lived one-time app code; the backend stores only its hash and consumes it once.
-- Refresh tokens are stored hashed server-side and sent to the browser only as an `HttpOnly`, SameSite cookie. Production must set the cookie Secure flags.
-- Payment simulator status is not a bank transfer or live payment. Use Razorpay test credentials for gateway development.
-- Back up MySQL, verify restore drills, paginate growing endpoints, and run concurrency and browser tests before using real users.
+- **SIMULATOR** is for local development only. The `prod` profile blocks simulator payments in the backend even if an environment variable attempts to enable them. “Success” is an explicit local simulator decision; the API checks hold ownership, expiration, seat state and idempotency before confirming. A simulator refund is not a bank refund.
+- **RAZORPAY** requires `PAYMENT_MODE=RAZORPAY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and webhook secret. Use only Razorpay test credentials for development. The app loads Checkout.js only if `/api/payments/options` says enabled. Configure the webhook URL as `https://YOUR-REACHABLE-HOST/api/payments/razorpay/webhook` with a secret and enable appropriate `payment.captured`, `payment.failed`, `refund.processed`, and `refund.failed` events. Localhost is not reachable by the gateway without a secure tunnel. Do not put secrets in the frontend.
 
-## License / project use
+## Architecture and contracts
 
-This repository is provided as a student major-project codebase. Check the licences and terms for any third-party images, fonts, logos, APIs and payment-provider assets used when you deploy or redistribute the application.
+- API reference: [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) or Swagger UI.
+- Booking consistency: [`docs/BOOKING_CONSISTENCY.md`](docs/BOOKING_CONSISTENCY.md).
+- Payment and security: [`docs/PAYMENT_WORKFLOW.md`](docs/PAYMENT_WORKFLOW.md), [`docs/SECURITY.md`](docs/SECURITY.md).
+- Full docs and known limitations are in `docs/`.
+- Postman: `postman/CineBook-AI.postman_collection.json`.
+- Load test skeleton: `performance/cinebook-booking.jmx` (configure credentials and IDs; start low).
+
+## Important production-hardening gaps
+
+Before real public use, add migrations/backups/restore drills, proper distributed rate limiting, CSRF strategy if refresh-token storage changes to cookies, complete partner mutation workflows with ownership scoping, email deliverability monitoring/retry handling, durable monitoring/alerting, a payment reconciliation job, fraud/abuse controls, deployment TLS/HSTS, security and concurrency testing against real MySQL, and review data-retention/privacy/legal requirements. The refresh token is currently held in browser session storage: safer than persistent local storage for reducing persistence, but still accessible to active same-origin JavaScript; consider an HttpOnly Secure SameSite cookie architecture with CSRF defenses.
+
+
+### If the browser still displays `customerRail is not defined`
+
+The corrected vanilla-JavaScript customer dashboard does not reference `customerRail`; that message usually means the browser is using an older frontend bundle or the server is running from a different extracted folder. Stop the old frontend terminal with `Ctrl+C`, open the current project folder in VS Code, run `cd frontend` followed by `npm run dev`, and reopen the local URL printed by the new terminal. The app uses a versioned JavaScript URL and no-cache headers to reduce stale-asset issues.
