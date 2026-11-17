@@ -1,0 +1,10 @@
+flowchart TB
+  Customer[Customer] --> Discover[Discover movies and showtimes]
+  Customer --> Seats[Choose seats and create hold]
+  Customer --> Payment[Pay and view ticket]
+  Customer --> AI[Ask AI movie assistant]
+  Partner[Theatre partner] --> PartnerShows[View owned showtimes and dashboard]
+  Admin[Platform administrator] --> Users[Manage account roles]
+  Admin --> Movies[Create or activate movies]
+  Admin --> Audit[Review audit events]
+  Ops[Operations manager] --> Health[Review operational metrics]

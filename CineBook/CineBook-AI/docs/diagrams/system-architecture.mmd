@@ -1,0 +1,13 @@
+flowchart LR
+  Browser[Browser / React SPA] --> Proxy[Vercel or local same-origin proxy]
+  Proxy --> Security[Spring Security / JWT / OIDC]
+  Security --> API[Spring Boot REST controllers]
+  API --> Services[Domain services]
+  Services --> DB[(MySQL 8 / Flyway)]
+  Services --> Cache[(Redis cache)]
+  Services --> Outbox[Transactional outbox]
+  Outbox --> Broker[(RabbitMQ)]
+  Services --> AI[Spring AI ChatClient]
+  AI --> LLM[Configured LLM provider]
+  Services --> Pay[Razorpay gateway]
+  Security --> Google[Google OpenID Connect]

@@ -1,0 +1,21 @@
+sequenceDiagram
+  participant U as Browser
+  participant V as Vercel proxy
+  participant S as Spring Security
+  participant G as Google OIDC
+  participant D as CineBook database
+  U->>V: GET /oauth2/authorization/google
+  V->>S: Forward request and public host headers
+  S-->>U: Redirect to Google + OAuth state session cookie
+  U->>G: Authenticate and consent
+  G-->>U: Redirect to public callback with authorization code
+  U->>V: GET /login/oauth2/code/google
+  V->>S: Forward Cookie and callback
+  S->>G: Exchange code and validate ID token
+  S->>D: Resolve Google sub and create/link CUSTOMER account
+  S->>D: Store hashed short-lived one-time app code
+  S-->>U: Redirect to /auth/callback?code=...
+  U->>V: POST /api/auth/oauth/exchange
+  V->>S: Exchange one-time code
+  S->>D: Lock and consume code; rotate refresh record
+  S-->>U: Access token JSON + HttpOnly refresh cookie

@@ -1,0 +1,14 @@
+flowchart TD
+  Customer[Customer browser] --> SPA[React SPA]
+  SPA --> Proxy[Vercel API and OAuth proxy]
+  Proxy --> API[Spring Boot controllers]
+  API --> Services[Authentication, catalogue, booking, payment, AI services]
+  Services --> DB[(MySQL 8 / Flyway)]
+  Services --> Cache[(Redis, optional)]
+  Services --> Queue[(RabbitMQ / outbox, optional)]
+  Services --> Google[Google OIDC, optional]
+  Services --> LLM[LLM provider via Spring AI, optional]
+  Services --> Gateway[Razorpay, optional]
+  Services --> SMTP[SMTP email, optional]
+  DB --> Dash[Database-backed dashboards]
+  Dash --> SPA

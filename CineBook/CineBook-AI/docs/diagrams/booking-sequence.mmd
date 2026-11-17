@@ -1,0 +1,16 @@
+sequenceDiagram
+  participant C as Customer UI
+  participant API as Spring Boot API
+  participant DB as MySQL inventory
+  participant P as Payment provider
+  C->>API: POST /shows/{id}/holds + Idempotency-Key
+  API->>DB: Begin transaction and lock selected show_seats
+  DB-->>API: Locked, current seat state
+  API->>DB: Create expiring hold and update seat rows
+  API-->>C: Hold token and expiry
+  C->>API: Create payment order / simulator decision
+  API->>DB: Lock held inventory and verify ownership/expiry
+  API->>P: Create/verify gateway payment (when Razorpay mode)
+  P-->>API: Payment result / signature
+  API->>DB: Create booking, mark seats BOOKED, publish outbox event
+  API-->>C: Booking result

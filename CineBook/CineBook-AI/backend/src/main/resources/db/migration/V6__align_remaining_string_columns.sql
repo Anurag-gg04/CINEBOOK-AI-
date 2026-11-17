@@ -1,0 +1,11 @@
+ALTER TABLE refresh_tokens
+    MODIFY COLUMN token_hash VARCHAR(64) NOT NULL;
+
+ALTER TABLE payment_webhook_events
+    MODIFY COLUMN payload_hash VARCHAR(64) NOT NULL;
+
+ALTER TABLE payments
+    MODIFY COLUMN currency VARCHAR(3) NOT NULL DEFAULT 'INR';
+
+ALTER TABLE seat_holds
+    MODIFY COLUMN token VARCHAR(36) NOT NULL;

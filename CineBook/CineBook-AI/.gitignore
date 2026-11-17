@@ -1,0 +1,47 @@
+# Secrets / local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+# Java
+backend/target/
+.mvn/wrapper/maven-wrapper.jar
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+playwright-report/
+test-results/
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+# local database volumes are Docker-managed
+frontend-legacy/node_modules/
+frontend-legacy/dist/
+frontend-legacy/coverage/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+# Additional local secrets and credential files
+.envrc
+.secrets/
+secrets/
+credentials*.json
+client_secret*.json
+service-account*.json
+*-service-account*.json
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Local tooling / generated output
+.vscode/
+.idea/
